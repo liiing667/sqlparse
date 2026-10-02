@@ -32,6 +32,13 @@ The :meth:`~sqlparse.format` function accepts the following keyword arguments.
   Changes how identifiers are formatted. Allowed values are "upper", "lower",
   and "capitalize".
 
+``identifier_quote``
+  Rewrites quoted identifiers with a uniform quote style. Allowed values are
+  "backtick" (`` `name` ``), "double" (``"name"``) and "bracket"
+  (``[name]``). Quoted identifiers are recognized as a whole; the quoted
+  text itself, string literals and comments are left unchanged. Identifiers
+  quoted this way are not affected by ``identifier_case``.
+
 ``strip_comments``
   If ``True`` comments are removed from the statements.
 

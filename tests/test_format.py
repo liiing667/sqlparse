@@ -38,6 +38,72 @@ class TestFormat:
         res = sqlparse.format(sql, identifier_case="upper")
         assert res == 'select * from "foo"."bar"'
 
+    def test_identifierquote_backtick(self):
+        sql = 'SELECT "order", [user] FROM t'
+        res = sqlparse.format(sql, identifier_quote='backtick')
+        assert res == 'SELECT `order`, `user` FROM t'
+
+    def test_identifierquote_double(self):
+        sql = 'SELECT `order`, [user] FROM t'
+        res = sqlparse.format(sql, identifier_quote='double')
+        assert res == 'SELECT "order", "user" FROM t'
+
+    def test_identifierquote_bracket(self):
+        sql = 'SELECT `order`, "user" FROM t'
+        res = sqlparse.format(sql, identifier_quote='bracket')
+        assert res == 'SELECT [order], [user] FROM t'
+
+    def test_identifierquote_preserves_quoted_case(self):
+        sql = 'SELECT "Order", `UseR` FROM [MyTable]'
+        res = sqlparse.format(
+            sql, identifier_quote='double',
+            identifier_case='upper', keyword_case='lower')
+        assert res == 'select "Order", "UseR" from "MyTable"'
+
+    def test_identifierquote_keeps_unquoted_case_rules(self):
+        sql = 'SELECT "order", name FROM t'
+        res = sqlparse.format(
+            sql, identifier_quote='double', identifier_case='upper')
+        assert res == 'SELECT "order", NAME FROM T'
+
+    def test_identifierquote_skips_strings_and_comments(self):
+        sql = 'SELECT "a", \'[b]\' FROM t -- `c`\n/* "d" */'
+        res = sqlparse.format(sql, identifier_quote='bracket')
+        assert res == 'SELECT [a], \'[b]\' FROM t -- `c`\n/* "d" */'
+
+    def test_identifierquote_lone_brackets_untouched(self):
+        sql = 'SELECT a[1] FROM t'
+        res = sqlparse.format(sql, identifier_quote='double')
+        assert res == 'SELECT a[1] FROM t'
+
+    def test_identifierquote_unclosed_untouched(self):
+        sql = 'SELECT `order FROM t'
+        res = sqlparse.format(sql, identifier_quote='double')
+        assert res == sql
+
+    def test_identifierquote_escapes(self):
+        sql = 'SELECT "a""b", `a``` FROM t'
+        res = sqlparse.format(sql, identifier_quote='double')
+        assert res == 'SELECT "a""b", "a`" FROM t'
+        sql = 'SELECT "a]b" FROM t'
+        res = sqlparse.format(sql, identifier_quote='bracket')
+        assert res == 'SELECT [a]]b] FROM t'
+
+    def test_identifierquote_schema_qualified(self):
+        sql = 'SELECT * FROM "db"."t"'
+        res = sqlparse.format(sql, identifier_quote='backtick')
+        assert res == 'SELECT * FROM `db`.`t`'
+
+    def test_identifierquote_reindent(self):
+        sql = 'SELECT `order`, [user] FROM t WHERE `order` > 1'
+        res = sqlparse.format(sql, identifier_quote='double', reindent=True)
+        assert res == ('SELECT "order",\n       "user"\nFROM t\n'
+                       'WHERE "order" > 1')
+
+    def test_identifierquote_invalid_option(self):
+        with pytest.raises(SQLParseError):
+            sqlparse.format('SELECT * FROM t', identifier_quote='single')
+
     def test_strip_comments_single(self):
         sql = 'select *-- statement starts here\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)

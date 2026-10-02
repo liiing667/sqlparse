@@ -18,6 +18,7 @@ from sqlparse.filters.reindent import ReindentFilter
 from sqlparse.filters.right_margin import RightMarginFilter
 from sqlparse.filters.tokens import (
     IdentifierCaseFilter,
+    IdentifierQuoteFilter,
     KeywordCaseFilter,
     TruncateStringFilter,
 )
@@ -25,6 +26,7 @@ from sqlparse.filters.tokens import (
 __all__ = [
     'AlignedIndentFilter',
     'IdentifierCaseFilter',
+    'IdentifierQuoteFilter',
     'KeywordCaseFilter',
     'OutputPHPFilter',
     'OutputPythonFilter',
