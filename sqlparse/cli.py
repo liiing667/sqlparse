@@ -79,6 +79,14 @@ def create_parser():
             ', '.join(f'"{x}"' for x in _CASE_CHOICES)))
 
     group.add_argument(
+        '--identifier-quote',
+        metavar='CHOICE',
+        dest='identifier_quote',
+        choices=['backtick', 'double', 'bracket'],
+        help='rewrite quoted identifiers to a uniform quote style, '
+             'CHOICE is one of "backtick", "double", "bracket"')
+
+    group.add_argument(
         '-l', '--language',
         metavar='LANG',
         dest='output_format',

@@ -23,6 +23,11 @@ def validate_options(options):
         raise SQLParseError('Invalid value for identifier_case: '
                             f'{idcase!r}')
 
+    idquote = options.get('identifier_quote')
+    if idquote not in [None, 'backtick', 'double', 'bracket']:
+        raise SQLParseError('Invalid value for identifier_quote: '
+                            f'{idquote!r}')
+
     ofrmt = options.get('output_format')
     if ofrmt not in [None, 'sql', 'python', 'php']:
         raise SQLParseError('Unknown output format: '
@@ -149,6 +154,10 @@ def build_filter_stack(stack, options):
     if options.get('identifier_case'):
         stack.preprocess.append(
             filters.IdentifierCaseFilter(options['identifier_case']))
+
+    if options.get('identifier_quote'):
+        stack.preprocess.append(
+            filters.IdentifierQuoteFilter(options['identifier_quote']))
 
     if options.get('truncate_strings'):
         stack.preprocess.append(filters.TruncateStringFilter(

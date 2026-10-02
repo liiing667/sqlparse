@@ -38,6 +38,58 @@ class TestFormat:
         res = sqlparse.format(sql, identifier_case="upper")
         assert res == 'select * from "foo"."bar"'
 
+    @pytest.mark.parametrize(('case', 'expected'), [
+        ('upper', 'select `Order`, [User], "Address" from T'),
+        ('lower', 'select `Order`, [User], "Address" from t'),
+        ('capitalize', 'select `Order`, [User], "Address" from T'),
+    ])
+    def test_identifiercase_quoted_identifiers_untouched(self, case, expected):
+        # quoted identifiers keep their original case
+        sql = 'select `Order`, [User], "Address" from t'
+        assert sqlparse.format(sql, identifier_case=case) == expected
+
+    def test_identifierquote_invalid_option(self):
+        with pytest.raises(SQLParseError):
+            sqlparse.format('select 1', identifier_quote='foo')
+
+    @pytest.mark.parametrize(('style', 'expected'), [
+        ('backtick', 'select `order`, `user`, `Address` from `my table`'),
+        ('double', 'select "order", "user", "Address" from "my table"'),
+        ('bracket', 'select [order], [user], [Address] from [my table]'),
+    ])
+    def test_identifierquote(self, style, expected):
+        sql = 'select `order`, [user], "Address" from `my table`'
+        assert sqlparse.format(sql, identifier_quote=style) == expected
+
+    def test_identifierquote_preserves_case_and_strings(self):
+        sql = ("select `Mixed Case`, 'not `an` identifier' from t "
+               "-- a `comment`\n")
+        res = sqlparse.format(sql, identifier_quote='double')
+        assert res == ('select "Mixed Case", \'not `an` identifier\' from t '
+                       '-- a `comment`\n')
+
+    def test_identifierquote_escapes_quote_characters(self):
+        assert sqlparse.format(
+            'select `a``b` from t',
+            identifier_quote='double') == 'select "a`b" from t'
+        assert sqlparse.format(
+            'select "a""b" from t',
+            identifier_quote='backtick') == 'select `a"b` from t'
+        assert sqlparse.format(
+            'select "a]b" from t',
+            identifier_quote='bracket') == 'select [a]]b] from t'
+
+    def test_identifierquote_leaves_lone_brackets(self):
+        sql = 'select a[0] from t'
+        assert sqlparse.format(sql, identifier_quote='backtick') == sql
+
+    def test_identifierquote_combined_with_cases(self):
+        sql = 'select `Order` from `my table` where `Order` > 1'
+        res = sqlparse.format(sql, keyword_case='upper',
+                              identifier_case='capitalize',
+                              identifier_quote='bracket')
+        assert res == 'SELECT [Order] FROM [my table] WHERE [Order] > 1'
+
     def test_strip_comments_single(self):
         sql = 'select *-- statement starts here\nfrom foo'
         res = sqlparse.format(sql, strip_comments=True)
